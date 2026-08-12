@@ -5,54 +5,111 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Yunex</title>
 
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
   <style>
     * {
       box-sizing: border-box;
-      margin: 0;
-      padding: 0;
     }
 
     body {
+      margin: 0;
       min-height: 100vh;
-      background: linear-gradient(160deg, #061b12, #0a2e1d);
+      background: #071c12;
       color: white;
       font-family: Arial, sans-serif;
       display: flex;
       justify-content: center;
       align-items: center;
-      overflow: hidden;
     }
 
     .app {
       width: 100%;
       max-width: 430px;
-      min-height: 100vh;
-      padding: 35px 20px;
       text-align: center;
-    }
-
-    .logo {
-      width: 90px;
-      height: 90px;
-      margin: 10px auto 20px;
-      border-radius: 50%;
-      background: linear-gradient(145deg, #39ff88, #0b8f4b);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 42px;
-      font-weight: bold;
-      box-shadow: 0 0 35px rgba(40, 255, 130, 0.35);
+      padding: 30px 20px;
     }
 
     h1 {
-      font-size: 36px;
-      letter-spacing: 3px;
-      margin-bottom: 8px;
+      font-size: 42px;
+      margin: 0 0 10px;
+      color: #43ff8b;
     }
 
     .subtitle {
-      color: #9be8ba;
-      margin-bottom: 35
+      color: #9be8b8;
+      margin-bottom: 35px;
+    }
+
+    .balance {
+      background: #103c27;
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 35px;
+    }
+
+    .label {
+      color: #9be8b8;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    #balance {
+      font-size: 36px;
+      font-weight: bold;
+      color: #43ff8b;
+    }
+
+    #tap {
+      width: 190px;
+      height: 190px;
+      border: 0;
+      border-radius: 50%;
+      background: #20c968;
+      color: white;
+      font-size: 30px;
+      font-weight: bold;
+      box-shadow: 0 0 35px rgba(32, 201, 104, 0.4);
+    }
+
+    #tap:active {
+      transform: scale(0.92);
+    }
+
+    .hint {
+      margin-top: 25px;
+      color: #8bcaa5;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="app">
+    <h1>YUNEX</h1>
+
+    <div class="subtitle">
+      Tap & Earn
+    </div>
+
+    <div class="balance">
+      <div class="label">YOUR BALANCE</div>
+      <div id="balance">0 YNX</div>
+    </div>
+
+    <button id="tap">TAP</button>
+
+    <div class="hint">
+      Tap to collect YNX
+    </div>
+  </div>
+
+  <script>
+    let balance = 0;
+
+    document.getElementById("tap").onclick = function () {
+      balance++;
+      document.getElementById("balance").textContent = balance + " YNX";
+    };
+  </script>
+
+</body>
+</html>
