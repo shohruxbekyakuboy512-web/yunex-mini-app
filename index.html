@@ -42,6 +42,7 @@ html,body{
 
 button{
   font-family:inherit;
+  cursor:pointer;
 }
 
 #app{
@@ -519,6 +520,13 @@ button{
   font-size:34px;
   font-weight:900;
   color:#06331a;
+  overflow:hidden;
+}
+
+.avatar img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
 }
 
 .profileName{
@@ -998,7 +1006,7 @@ button{
 
   <div class="profile">
 
-    <div class="avatar">
+    <div class="avatar" id="avatarBox">
       Y
     </div>
 
@@ -1156,7 +1164,11 @@ const defaultState = {
 
   autoLevel:0,
 
-  lastDaily:0
+  lastDaily:0,
+
+  refCode:"",
+
+  pendingTaps:0
 
 };
 
@@ -1196,6 +1208,60 @@ function save(){
 }
 
 
+/* TELEGRAM USER INTEGRATION */
+
+function initUser(){
+
+  if(tg?.initDataUnsafe?.user){
+
+    const u = tg.initDataUnsafe.user;
+
+    document.getElementById("profileName").textContent =
+      u.first_name + (u.last_name ? " " + u.last_name : "");
+
+    if(u.photo_url){
+
+      const avatarBox = document.getElementById("avatarBox");
+      avatarBox.innerHTML = `<img src="${u.photo_url}" alt="Avatar">`;
+
+    }
+
+    if(!state.refCode){
+      state.refCode = "YNX-" + String(u.id).slice(-5);
+    }
+
+  } else {
+
+    if(!state.refCode){
+      state.refCode = "YNX-" + Math.floor(10000 + Math.random() * 90000);
+    }
+
+  }
+
+  document.getElementById("refCode").textContent = state.refCode;
+
+}
+
+
+/* TOAST NOTIFICATION */
+
+function toast(msg){
+
+  const t = document.getElementById("toast");
+
+  t.textContent = msg;
+
+  t.classList.add("show");
+
+  setTimeout(()=>{
+
+    t.classList.remove("show");
+
+  }, 2000);
+
+}
+
+
 /* ELEMENTS */
 
 const balance =
@@ -1223,7 +1289,7 @@ const totalTaps =
   document.getElementById("totalTaps");
 
 
-/* UI */
+/* UI UPDATE ENGINE */
 
 function updateUI(){
 
@@ -1301,7 +1367,7 @@ function updateUI(){
 }
 
 
-/* LEVEL */
+/* LEVEL SYSTEM */
 
 function checkLevel(){
 
@@ -1316,12 +1382,16 @@ function checkLevel(){
       `🎉 Yangi daraja: ${state.level}`
     );
 
+    if(tg){
+      try{ tg.HapticFeedback.notificationOccurred("success"); }catch(e){}
+    }
+
   }
 
 }
 
 
-/* FLOAT TEXT */
+/* FLOAT ANIMATION */
 
 function floatingText(x,y,text){
 
@@ -1340,108 +1410,4 @@ function floatingText(x,y,text){
     y + "px";
 
   document
-    .getElementById("floatContainer")
-    .appendChild(el);
-
-  setTimeout(
-    ()=>el.remove(),
-    750
-  );
-
-}
-
-
-/* TAP */
-
-const coin =
-  document.getElementById("coin");
-
-
-coin.addEventListener(
-  "pointerdown",
-  function(e){
-
-    e.preventDefault();
-
-    if(state.energy < 1){
-
-      toast("⚡ Energiya tugadi");
-
-      return;
-
-    }
-
-
-    state.energy -= 1;
-
-    state.balance += state.tapPower;
-
-    state.totalTaps += 1;
-
-
-    const rect =
-      coin.getBoundingClientRect();
-
-    const x =
-      e.clientX -
-      document.getElementById("coinArea")
-        .getBoundingClientRect().left;
-
-    const y =
-      e.clientY -
-      document.getElementById("coinArea")
-        .getBoundingClientRect().top;
-
-
-    floatingText(
-      x,
-      y,
-      state.tapPower
-    );
-
-
-    coin.animate(
-
-      [
-        {transform:"scale(1)"},
-        {transform:"scale(.94)"},
-        {transform:"scale(1)"}
-      ],
-
-      {
-        duration:120
-      }
-
-    );
-
-
-    if(tg){
-
-      try{
-
-        tg.HapticFeedback
-          .impactOccurred("light");
-
-      }catch(e){}
-
-    }
-
-
-    checkLevel();
-
-    updateUI();
-
-    save();
-
-  }
-
-);
-
-
-/* ENERGY */
-
-setInterval(
-
-  ()=>{
-
-    const 
+    .ge
