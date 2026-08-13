@@ -1,115 +1,488 @@
+      Mana Yunex ilovasining to'liq kodi:
+
+```html
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uz">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Yunex</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Yunex</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  * { box-sizing: border-box; }
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: #071c12;
+    color: white;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
 
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: #071c12;
-      color: white;
-      font-family: Arial, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+  .app {
+    width: 100%;
+    max-width: 430px;
+    text-align: center;
+    padding: 24px 20px;
+    position: relative;
+  }
 
-    .app {
-      width: 100%;
-      max-width: 430px;
-      text-align: center;
-      padding: 30px 20px;
-    }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
 
-    h1 {
-      font-size: 42px;
-      margin: 0 0 10px;
-      color: #43ff8b;
-    }
+  h1 {
+    font-size: 30px;
+    margin: 0;
+    color: #43ff8b;
+    letter-spacing: 1px;
+  }
 
-    .subtitle {
-      color: #9be8b8;
-      margin-bottom: 35px;
-    }
+  .level-chip {
+    background: #103c27;
+    border-radius: 100px;
+    padding: 6px 14px;
+    font-size: 13px;
+    color: #9be8b8;
+    font-weight: bold;
+  }
+  .level-chip b { color: #43ff8b; }
 
-    .balance {
-      background: #103c27;
-      border-radius: 20px;
-      padding: 20px;
-      margin-bottom: 35px;
-    }
+  .subtitle {
+    color: #9be8b8;
+    margin-bottom: 20px;
+    font-size: 13px;
+  }
 
-    .label {
-      color: #9be8b8;
-      font-size: 14px;
-      margin-bottom: 8px;
-    }
+  .balance {
+    background: #103c27;
+    border-radius: 20px;
+    padding: 18px;
+    margin-bottom: 18px;
+  }
 
-    #balance {
-      font-size: 36px;
-      font-weight: bold;
-      color: #43ff8b;
-    }
+  .label {
+    color: #9be8b8;
+    font-size: 12px;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
 
-    #tap {
-      width: 190px;
-      height: 190px;
-      border: 0;
-      border-radius: 50%;
-      background: #20c968;
-      color: white;
-      font-size: 30px;
-      font-weight: bold;
-      box-shadow: 0 0 35px rgba(32, 201, 104, 0.4);
-    }
+  #balance {
+    font-size: 34px;
+    font-weight: bold;
+    color: #43ff8b;
+    font-variant-numeric: tabular-nums;
+  }
 
-    #tap:active {
-      transform: scale(0.92);
-    }
+  .progress-track {
+    height: 6px;
+    background: #0a2b1a;
+    border-radius: 100px;
+    overflow: hidden;
+    margin-top: 12px;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #20c968, #43ff8b);
+    border-radius: 100px;
+    transition: width .2s ease;
+  }
+  .progress-caption {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #8bcaa5;
+    margin-top: 6px;
+  }
 
-    .hint {
-      margin-top: 25px;
-      color: #8bcaa5;
-    }
-  </style>
+  .stage {
+    position: relative;
+    width: 220px;
+    height: 220px;
+    margin: 10px auto 16px;
+  }
+
+  .charge-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(#20c968 0%, transparent 0%);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px));
+    transition: background .15s linear;
+  }
+
+  #tap {
+    position: absolute;
+    top: 15px; left: 15px;
+    width: 190px;
+    height: 190px;
+    border: none;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 28%, #4dffa0, #20c968 55%, #128a49 100%);
+    color: white;
+    font-size: 26px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    box-shadow: 0 0 35px rgba(32, 201, 104, 0.45), inset 0 -8px 16px rgba(0,0,0,0.25), inset 0 6px 14px rgba(255,255,255,0.25);
+    cursor: pointer;
+    transition: transform .08s ease;
+  }
+  #tap:active { transform: scale(0.92); }
+  #tap.pulse { animation: pulse .3s ease; }
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    35% { transform: scale(0.92); }
+    100% { transform: scale(1); }
+  }
+
+  .combo-tag {
+    position: absolute;
+    top: 0px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 13px;
+    font-weight: bold;
+    color: #ffe14d;
+    opacity: 0;
+    transition: opacity .2s ease;
+  }
+  .combo-tag.show { opacity: 1; }
+
+  .floaters { position: absolute; inset: 0; pointer-events: none; }
+  .floater {
+    position: absolute;
+    font-size: 20px;
+    font-weight: bold;
+    color: #43ff8b;
+    animation: floatUp .8s ease-out forwards;
+    white-space: nowrap;
+  }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translate(-50%,-50%) translateY(0); }
+    100% { opacity: 0; transform: translate(-50%,-50%) translateY(-70px); }
+  }
+  .particle {
+    position: absolute;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #43ff8b;
+    top: 50%; left: 50%;
+    animation: burst .5s ease-out forwards;
+  }
+  @keyframes burst {
+    0% { opacity: 1; transform: translate(-50%,-50%) translate(0,0) scale(1); }
+    100% { opacity: 0; transform: translate(-50%,-50%) var(--tx) scale(0.4); }
+  }
+
+  .energy-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .energy-icon {
+    width: 14px; height: 14px;
+    background: #ffe14d;
+    clip-path: polygon(45% 0%, 100% 0%, 40% 55%, 70% 55%, 25% 100%, 30% 45%, 0% 45%);
+    flex-shrink: 0;
+  }
+  .energy-track {
+    flex: 1;
+    height: 8px;
+    background: #0a2b1a;
+    border-radius: 100px;
+    overflow: hidden;
+  }
+  .energy-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ffe14d, #ffb84d);
+    border-radius: 100px;
+    transition: width .2s ease;
+  }
+  .energy-num {
+    font-size: 12px;
+    color: #9be8b8;
+    min-width: 50px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .stat-card {
+    background: #103c27;
+    border-radius: 14px;
+    padding: 12px;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: #9be8b8;
+    letter-spacing: 0.5px;
+  }
+  .stat-value {
+    font-size: 19px;
+    font-weight: bold;
+    color: #43ff8b;
+    margin-top: 3px;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #103c27;
+    border: 1px solid #1e5c3a;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: bold;
+    opacity: 0;
+    transition: all .25s ease;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast b { color: #43ff8b; }
+</style>
 </head>
-
 <body>
 
-  <div class="app">
+<div class="app">
+  <header>
     <h1>YUNEX</h1>
+    <div class="level-chip">Daraja <b id="levelNum">1</b></div>
+  </header>
+  <div class="subtitle">Tap &amp; Earn</div>
 
-    <div class="subtitle">
-      Tap & Earn
-    </div>
-
-    <div class="balance">
-      <div class="label">YOUR BALANCE</div>
-      <div id="balance">0 YNX</div>
-    </div>
-
-    <button id="tap">TAP</button>
-
-    <div class="hint">
-      Tap to collect YNX
+  <div class="balance">
+    <div class="label">YOUR BALANCE</div>
+    <div id="balance">0 YNX</div>
+    <div class="progress-track"><div class="progress-fill" id="levelProgress"></div></div>
+    <div class="progress-caption">
+      <span id="progressText">0 / 500</span>
+      <span id="perTapText">+1 / tap</span>
     </div>
   </div>
 
-  <script>
-    let balance = 0;
+  <div class="stage">
+    <div class="charge-ring" id="chargeRing"></div>
+    <div class="combo-tag" id="comboTag">x2 kombo</div>
+    <button id="tap">TAP</button>
+    <div class="floaters" id="floaters"></div>
+  </div>
 
-    document.getElementById("tap").onclick = function () {
-      balance++;
-      document.getElementById("balance").textContent = balance + " YNX";
-    };
-  </script>
+  <div class="energy-row">
+    <div class="energy-icon"></div>
+    <div class="energy-track"><div class="energy-fill" id="energyFill"></div></div>
+    <div class="energy-num" id="energyNum">100/100</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Jami tap</div>
+      <div class="stat-value" id="totalTaps">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Eng uzun kombo</div>
+      <div class="stat-value" id="bestCombo">0</div>
+    </div>
+  </div>
+
+  <div class="hint">Tap to collect YNX</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  try{ window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.ready(); }catch(e){}
+  try{ window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.expand(); }catch(e){}
+
+  const state = {
+    balance: 0,
+    level: 1,
+    levelProgress: 0,
+    levelTarget: 500,
+    perTap: 1,
+    energy: 100,
+    maxEnergy: 100,
+    totalTaps: 0,
+    comboCount: 0,
+    bestCombo: 0,
+    lastTapTime: 0
+  };
+
+  const el = {
+    balance: document.getElementById('balance'),
+    level: document.getElementById('levelNum'),
+    progress: document.getElementById('levelProgress'),
+    progressText: document.getElementById('progressText'),
+    perTapText: document.getElementById('perTapText'),
+    tap: document.getElementById('tap'),
+    chargeRing: document.getElementById('chargeRing'),
+    floaters: document.getElementById('floaters'),
+    comboTag: document.getElementById('comboTag'),
+    energyFill: document.getElementById('energyFill'),
+    energyNum: document.getElementById('energyNum'),
+    totalTaps: document.getElementById('totalTaps'),
+    bestCombo: document.getElementById('bestCombo'),
+    toast: document.getElementById('toast')
+  };
+
+  function fmt(n){ return Math.floor(n).toLocaleString('en-US'); }
+
+  function showToast(msg){
+    el.toast.innerHTML = msg;
+    el.toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=> el.toast.classList.remove('show'), 1800);
+  }
+
+  function updateLevelUI(){
+    const pct = Math.min(100, (state.levelProgress / state.levelTarget) * 100);
+    el.progress.style.width = pct + '%';
+    el.progressText.textContent = fmt(state.levelProgress) + ' / ' + fmt(state.levelTarget);
+    el.perTapText.textContent = '+' + state.perTap + ' / tap';
+    el.level.textContent = state.level;
+  }
+
+  function updateEnergyUI(){
+    const pct = (state.energy / state.maxEnergy) * 100;
+    el.energyFill.style.width = pct + '%';
+    el.energyNum.textContent = Math.floor(state.energy) + '/' + state.maxEnergy;
+    el.chargeRing.style.background = `conic-gradient(#20c968 ${pct}%, transparent ${pct}%)`;
+  }
+
+  function spawnFloater(text, x, y){
+    const f = document.createElement('div');
+    f.className = 'floater';
+    f.style.left = x + 'px';
+    f.style.top = y + 'px';
+    f.textContent = text;
+    el.floaters.appendChild(f);
+    setTimeout(()=> f.remove(), 850);
+  }
+
+  function spawnBurst(x, y){
+    for(let i=0;i<8;i++){
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const angle = (Math.PI*2/8) * i;
+      const dist = 46 + Math.random()*18;
+      p.style.setProperty('--tx', `${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px`);
+      p.style.left = x + 'px';
+      p.style.top = y + 'px';
+      el.floaters.appendChild(p);
+      setTimeout(()=> p.remove(), 550);
+    }
+  }
+
+  function levelUp(){
+    state.level += 1;
+    state.levelProgress = 0;
+    state.levelTarget = Math.round(state.levelTarget * 1.35);
+    state.perTap += 1;
+    state.maxEnergy += 10;
+    state.energy = state.maxEnergy;
+    showToast('<b>Daraja ' + state.level + '</b> — endi +' + state.perTap + ' YNX / tap!');
+    try{ window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback && window.Telegram.WebApp.HapticFeedback.notificationOccurred('success'); }catch(e){}
+  }
+
+  function tap(clientX, clientY){
+    if(state.energy < 1){
+      showToast('Energiya tugadi — biroz kuting ⚡');
+      return;
+    }
+
+    const now = Date.now();
+    if(now - state.lastTapTime < 700){
+      state.comboCount += 1;
+    } else {
+      state.comboCount = 1;
+    }
+    state.lastTapTime = now;
+    if(state.comboCount > state.bestCombo){
+      state.bestCombo = state.comboCount;
+      el.bestCombo.textContent = state.bestCombo;
+    }
+
+    let multiplier = 1;
+    if(state.comboCount >= 15) multiplier = 3;
+    else if(state.comboCount >= 6) multiplier = 2;
+
+    if(multiplier > 1){
+      el.comboTag.textContent = 'x' + multiplier + ' kombo';
+      el.comboTag.classList.add('show');
+      clearTimeout(tap._ct);
+      tap._ct = setTimeout(()=> el.comboTag.classList.remove('show'), 500);
+    }
+
+    const gain = state.perTap * multiplier;
+    state.balance += gain;
+    state.levelProgress += gain;
+    state.energy = Math.max(0, state.energy - 1);
+    state.totalTaps += 1;
+
+    el.totalTaps.textContent = fmt(state.totalTaps);
+    el.balance.textContent = fmt(state.balance) + ' YNX';
+    updateEnergyUI();
+
+    if(state.levelProgress >= state.levelTarget){
+      levelUp();
+    }
+    updateLevelUI();
+
+    const rect = el.tap.getBoundingClientRect();
+    const parentRect = el.tap.parentElement.getBoundingClientRect();
+    const x = (clientX ?? (rect.left+rect.width/2)) - parentRect.left;
+    const y = (clientY ?? (rect.top+rect.height/2)) - parentRect.top;
+    spawnFloater('+' + gain, x, y);
+    spawnBurst(x, y);
+
+    el.tap.classList.remove('pulse');
+    void el.tap.offsetWidth;
+    el.tap.classList.add('pulse');
+
+    try{ window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback && window.Telegram.WebApp.HapticFeedback.impactOccurred('light'); }catch(e){}
+  }
+
+  el.tap.addEventListener('pointerdown', function(e){
+    e.preventDefault();
+    tap(e.clientX, e.clientY);
+  });
+
+  // energy regen: +1 every 2.5s while below max
+  setInterval(function(){
+    if(state.energy < state.maxEnergy){
+      state.energy = Math.min(state.maxEnergy, state.energy + 1);
+      updateEnergyUI();
+    }
+  }, 2500);
+
+  updateLevelUI();
+  updateEnergyUI();
+})();
+</script>
 
 </body>
 </html>
+```
+
+Bu shu paytgacha yasagan to'liq versiya — daraja, energiya, kombo, animatsiyalar bilan. Fayl sifatida ham yuborilgan (yunex-v2.html), agar kerak bo'lsa.
