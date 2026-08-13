@@ -1,457 +1,143 @@
+CREATE TABLE users (
+    id BIGINT PRIMARY KEY,
+    username VARCHAR(255),
+    balance NUMERIC(20, 2) DEFAULT 0,
+    energy INT DEFAULT 100,
+    max_energy INT DEFAULT 100,
+    tap_power INT DEFAULT 1,
+    level INT DEFAULT 1
+);
 
-```html
+CREATE TABLE transactions (
+    id SERIAL PRIMARY KEY,
+    user_id BIGINT,
+    amount NUMERIC,
+    type VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+const express = require('express');
+const cors = require('cors');
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+// In-memory DB (Production'da PostgreSQL ulanadi)
+const users = new Map();
+
+app.post('/api/user', (req, res) => {
+    const { userId, username } = req.body;
+    if (!users.has(userId)) {
+        users.set(userId, { id: userId, username, balance: 0, energy: 100, max_energy: 100, tap_power: 1, level: 1 });
+    }
+    res.json(users.get(userId));
+});
+
+app.post('/api/tap', (req, res) => {
+    const { userId, count } = req.body;
+    const user = users.get(userId);
+    if (!user) return res.status(404).send("User not found");
+    
+    // Anti-cheat: 3 sekundda 50 dan ortiq tap bo'lsa bloklash
+    if (count > 50) return res.status(400).send("Cheat detected");
+    
+    user.balance += (count * user.tap_power);
+    res.json({ balance: user.balance });
+});
+
+app.listen(3000, () => console.log('Backend running on port 3000'));
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Yunex</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg:#071c12;
-    --panel:#0d2c1c;
-    --panel-2:#123522;
-    --line:#1e5c3a;
-    --mint:#43ff8b;
-    --mint-dim:#20c968;
-    --gold:#ffd35c;
-    --violet:#8c7bff;
-    --text:#eafff2;
-    --muted:#7fb99a;
-    --danger:#ff5c7a;
-  }
-  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html,body{
-    margin:0; padding:0; height:100%;
-    background:var(--bg);
-    color:var(--text);
-    font-family:'Inter',sans-serif;
-    overflow:hidden;
-    user-select:none;
-    -webkit-user-select:none;
-    overscroll-behavior:none;
-  }
-  @media (prefers-reduced-motion:reduce){ *{ animation-duration:.001ms !important; transition-duration:.001ms !important; } }
-
-  .app{
-    height:100dvh;
-    max-width:460px;
-    margin:0 auto;
-    display:flex;
-    flex-direction:column;
-    position:relative;
-  }
-  .app::before{
-    content:'';
-    position:absolute; inset:0;
-    background:
-      radial-gradient(circle at 18% 8%, rgba(140,123,255,0.10), transparent 40%),
-      radial-gradient(circle at 88% 78%, rgba(67,255,139,0.08), transparent 45%);
-    pointer-events:none;
-    z-index:0;
-  }
-
-  .topbar{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:calc(env(safe-area-inset-top,0) + 14px) 18px 10px;
-    z-index:2;
-  }
-  .brand{ display:flex; align-items:center; gap:8px; }
-  .brand-mark{
-    width:24px; height:24px;
-    clip-path:polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-    background:conic-gradient(from 180deg, var(--gold), var(--mint), var(--gold));
-  }
-  .brand-name{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px; letter-spacing:.5px; }
-  .level-chip{
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:100px;
-    padding:5px 12px;
-    font-size:12px; font-weight:600; color:var(--muted);
-  }
-  .level-chip b{ color:var(--gold); font-family:'Space Grotesk',sans-serif; }
-
-  .balance-bar{
-    display:flex; align-items:baseline; gap:6px;
-    padding:0 18px 10px;
-    z-index:2;
-  }
-  .balance-bar .num{
-    font-family:'Space Grotesk',sans-serif;
-    font-weight:700; font-size:26px; color:var(--mint);
-    font-variant-numeric:tabular-nums;
-  }
-  .balance-bar .unit{ font-size:13px; color:var(--muted); font-weight:600; }
-
-  .views{ flex:1; min-height:0; position:relative; z-index:2; }
-  .view{
-    position:absolute; inset:0;
-    overflow-y:auto;
-    padding:6px 18px 90px;
-    display:none;
-    -webkit-overflow-scrolling:touch;
-  }
-  .view.active{ display:block; }
-
-  .progress-row{ display:flex; flex-direction:column; gap:6px; margin-bottom:10px; }
-  .progress-track{ height:6px; background:var(--panel); border-radius:100px; overflow:hidden; border:1px solid var(--line); }
-  .progress-fill{ height:100%; background:linear-gradient(90deg, var(--violet), var(--mint)); border-radius:100px; transition:width .2s ease; width:0%; }
-  .progress-caption{ font-size:11px; color:var(--muted); display:flex; justify-content:space-between; }
-
-  .stage{ display:flex; align-items:center; justify-content:center; padding:10px 0 6px; }
-  .coin-zone{ position:relative; width:236px; height:236px; display:flex; align-items:center; justify-content:center; touch-action:none; }
-  .charge-ring{
-    position:absolute; inset:0; border-radius:50%;
-    background:conic-gradient(from 0deg, var(--gold) 0%, transparent 0%);
-    -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px));
-    mask:radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px));
-    transition:background .15s linear;
-  }
-  .coin{
-    width:194px; height:194px;
-    clip-path:polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-    background:radial-gradient(circle at 35% 26%, #baffd8, var(--mint-dim) 55%, #0e6b3f 100%);
-    display:flex; align-items:center; justify-content:center;
-    box-shadow:0 0 44px rgba(67,255,139,0.35), inset 0 -10px 24px rgba(0,0,0,0.28), inset 0 8px 20px rgba(255,255,255,0.22);
-    position:relative;
-    touch-action:none;
-  }
-  .coin-glyph{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:60px; color:rgba(4,30,17,0.55); pointer-events:none; }
-  .coin-inner-ring{ position:absolute; inset:14px; clip-path:polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); border:2px solid rgba(255,255,255,0.32); pointer-events:none; }
-  .coin.pulse{ animation:coinPulse .28s ease; }
-  @keyframes coinPulse{ 0%{transform:scale(1);} 40%{transform:scale(0.94);} 100%{transform:scale(1);} }
-
-  .floaters{ position:absolute; inset:0; pointer-events:none; }
-  .floater{
-    position:absolute; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:19px; color:var(--gold);
-    animation:floatUp .75s ease-out forwards; white-space:nowrap;
-  }
-  @keyframes floatUp{ 0%{opacity:1; transform:translate(-50%,-50%) translateY(0);} 100%{opacity:0; transform:translate(-50%,-50%) translateY(-66px);} }
-  .particle{
-    position:absolute; width:6px; height:6px; background:var(--mint);
-    clip-path:polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-    top:50%; left:50%; animation:burst .45s ease-out forwards;
-  }
-  @keyframes burst{ 0%{opacity:1; transform:translate(-50%,-50%) translate(0,0) scale(1);} 100%{opacity:0; transform:translate(-50%,-50%) var(--tx) scale(0.4);} }
-
-  .combo-tag{ position:absolute; top:-2px; font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600; color:var(--gold); opacity:0; transition:opacity .2s ease; }
-  .combo-tag.show{ opacity:1; }
-
-  .multi-hint{ text-align:center; font-size:11px; color:var(--muted); margin-top:2px; }
-
-  .energy-row{ display:flex; align-items:center; gap:10px; margin:12px 0 4px; }
-  .energy-icon{ width:14px; height:14px; background:var(--violet); clip-path:polygon(45% 0%, 100% 0%, 40% 55%, 70% 55%, 25% 100%, 30% 45%, 0% 45%); flex-shrink:0; }
-  .energy-track{ flex:1; height:8px; background:var(--panel); border-radius:100px; overflow:hidden; border:1px solid var(--line); }
-  .energy-fill{ height:100%; background:linear-gradient(90deg, var(--violet), #b3a7ff); border-radius:100px; transition:width .2s ease; }
-  .energy-num{ font-size:12px; font-weight:600; color:var(--muted); min-width:52px; text-align:right; font-variant-numeric:tabular-nums; }
-
-  .stats{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:14px 0 10px; }
-  .stat-card{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px 14px; }
-  .stat-label{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; font-weight:600; }
-  .stat-value{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:18px; margin-top:3px; }
-
-  .section-title{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px; margin:14px 0 4px; }
-  .section-sub{ font-size:12.5px; color:var(--muted); margin-bottom:14px; }
-
-  .card{
-    background:var(--panel); border:1px solid var(--line); border-radius:16px;
-    padding:14px; margin-bottom:10px;
-    display:flex; align-items:center; gap:12px;
-  }
-  .card-icon{
-    width:44px; height:44px; border-radius:12px; flex-shrink:0;
-    display:flex; align-items:center; justify-content:center;
-    font-size:20px;
-  }
-  .icon-tap{ background:rgba(67,255,139,0.14); }
-  .icon-energy{ background:rgba(140,123,255,0.16); }
-  .icon-regen{ background:rgba(255,211,92,0.14); }
-  .icon-auto{ background:rgba(255,92,122,0.12); }
-  .card-body{ flex:1; min-width:0; }
-  .card-title{ font-weight:700; font-size:14.5px; }
-  .card-desc{ font-size:12px; color:var(--muted); margin-top:2px; }
-  .card-lvl{ font-size:11px; color:var(--gold); margin-top:4px; font-weight:600; }
-  .card-btn{
-    background:var(--mint); color:#04170d; border:none; border-radius:100px;
-    padding:9px 14px; font-weight:700; font-size:12.5px; white-space:nowrap;
-    font-family:'Space Grotesk',sans-serif;
-  }
-  .card-btn:disabled{ background:var(--panel-2); color:var(--muted); }
-
-  .task-card{
-    background:var(--panel); border:1px solid var(--line); border-radius:16px;
-    padding:14px; margin-bottom:10px;
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
-  }
-  .task-left{ display:flex; align-items:center; gap:12px; min-width:0; }
-  .task-icon{ width:40px; height:40px; border-radius:10px; background:rgba(255,211,92,0.14); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
-  .task-title{ font-weight:700; font-size:14px; }
-  .task-reward{ font-size:12px; color:var(--gold); margin-top:2px; font-weight:600; }
-  .task-btn{
-    background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:100px;
-    padding:9px 14px; font-weight:700; font-size:12.5px; white-space:nowrap;
-    font-family:'Space Grotesk',sans-serif;
-  }
-  .task-btn.ready{ background:var(--gold); color:#241a00; border-color:var(--gold); }
-  .task-btn.done{ background:transparent; color:var(--mint); border-color:var(--mint); }
-
-  .ref-code-box{
-    background:var(--panel); border:1px dashed var(--line); border-radius:16px;
-    padding:16px; text-align:center; margin-bottom:14px;
-  }
-  .ref-code{ font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; color:var(--mint); letter-spacing:2px; margin:6px 0 12px; }
-  .copy-btn{
-    background:var(--mint); color:#04170d; border:none; border-radius:100px;
-    padding:10px 20px; font-weight:700; font-size:13px; font-family:'Space Grotesk',sans-serif;
-  }
-  .ref-reward-note{ font-size:12px; color:var(--muted); margin-bottom:14px; text-align:center; }
-  .friend-row{
-    display:flex; align-items:center; justify-content:space-between;
-    background:var(--panel); border:1px solid var(--line); border-radius:14px;
-    padding:12px 14px; margin-bottom:8px;
-  }
-  .friend-name{ font-weight:600; font-size:13.5px; }
-  .friend-bonus{ font-size:12.5px; color:var(--gold); font-weight:700; }
-  .empty-note{ text-align:center; color:var(--muted); font-size:12.5px; padding:20px 0; }
-
-  .profile-header{ display:flex; flex-direction:column; align-items:center; padding:12px 0 20px; }
-  .avatar{
-    width:88px; height:88px;
-    clip-path:polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-    background:radial-gradient(circle at 35% 26%, #baffd8, var(--mint-dim) 55%, #0e6b3f 100%);
-    display:flex; align-items:center; justify-content:center;
-    box-shadow:0 0 30px rgba(67,255,139,0.3);
-    margin-bottom:10px;
-  }
-  .avatar span{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:34px; color:rgba(4,30,17,0.6); }
-  .profile-name{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:18px; }
-  .profile-sub{ font-size:12.5px; color:var(--muted); margin-top:2px; }
-  .profile-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
-  .reset-btn{
-    width:100%; background:transparent; border:1px solid var(--danger); color:var(--danger);
-    border-radius:14px; padding:12px; font-weight:700; font-size:13px; font-family:'Space Grotesk',sans-serif;
-    margin-top:6px;
-  }
-
-  .navbar{
-    position:relative;
-    z-index:3;
-    display:flex;
-    background:var(--panel);
-    border-top:1px solid var(--line);
-    padding:8px 6px calc(env(safe-area-inset-bottom,0) + 8px);
-  }
-  .navbtn{
-    flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
-    background:none; border:none; color:var(--muted);
-    font-size:10.5px; font-weight:600; font-family:'Inter',sans-serif;
-    padding:6px 2px; border-radius:10px;
-  }
-  .navbtn .ico{ font-size:19px; line-height:1; }
-  .navbtn.active{ color:var(--mint); }
-  .navbtn.active .ico{ filter:drop-shadow(0 0 6px rgba(67,255,139,0.5)); }
-
-  .toast{
-    position:fixed; bottom:78px; left:50%;
-    transform:translateX(-50%) translateY(20px);
-    background:var(--panel-2); border:1px solid var(--line); color:var(--text);
-    padding:10px 18px; border-radius:100px; font-size:13px; font-weight:600;
-    opacity:0; transition:all .25s ease; pointer-events:none; z-index:20;
-    max-width:88%; text-align:center;
-  }
-  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
-  .toast b{ color:var(--mint); }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Yunex</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="app">
-
-  <div class="topbar">
-    <div class="brand">
-      <div class="brand-mark"></div>
-      <div class="brand-name">Yunex</div>
+    <div id="app">
+        <header class="header">
+            <div class="user-info">Yunex App</div>
+            <div class="balance-box"><span id="balance">0</span> YNX</div>
+        </header>
+        <main class="main-content">
+            <div id="coin" class="hex-coin">Y</div>
+            <div class="energy-box">⚡ <span id="energy">100</span>/100</div>
+        </main>
+        <nav class="bottom-nav">
+            <button onclick="switchTab('home')">🪙</button>
+            <button onclick="switchTab('boost')">⚡</button>
+            <button onclick="switchTab('tasks')">✅</button>
+            <button onclick="switchTab('ref')">👥</button>
+        </nav>
     </div>
-    <div class="level-chip">Daraja <b id="levelNum">1</b></div>
-  </div>
-  <div class="balance-bar">
-    <div class="num" id="balanceNum">0</div>
-    <div class="unit">YNX</div>
-  </div>
+    <script src="app.js"></script>
+</body>
+</html>
+:root { --bg: #06170E; --green: #48FF91; --gold: #FFD35C; --panel: #0D2B1B; }
+body { background: var(--bg); color: white; margin: 0; font-family: sans-serif; overflow: hidden; height: 100vh; }
+.header { display: flex; justify-content: space-between; padding: 20px; }
+.balance-box { font-size: 24px; font-weight: bold; color: var(--gold); }
+.hex-coin { width: 200px; height: 200px; background: linear-gradient(135deg, var(--green), var(--gold)); 
+            margin: 50px auto; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); 
+            display: flex; justify-content: center; align-items: center; font-size: 60px; cursor: pointer; transition: 0.1s; }
+.hex-coin:active { transform: scale(0.95); }
+.bottom-nav { position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-around; 
+              padding: 20px; background: var(--panel); border-top: 1px solid #1a4a2f; }
+button { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+const tg = window.Telegram.WebApp;
+let state = { balance: 0, energy: 100, tapPower: 1, pendingTaps: 0 };
 
-  <div class="views">
+// Multi-touch Pointer Events
+document.getElementById('coin').addEventListener('pointerdown', (e) => {
+    if (state.energy > 0) {
+        state.energy--;
+        state.balance += state.tapPower;
+        state.pendingTaps++;
+        
+        document.getElementById('balance').innerText = Math.floor(state.balance);
+        document.getElementById('energy').innerText = state.energy;
+        
+        tg.HapticFeedback.impactOccurred('light');
+    }
+});
 
-    <div class="view active" id="view-home">
-      <div class="progress-row">
-        <div class="progress-track"><div class="progress-fill" id="levelProgress"></div></div>
-        <div class="progress-caption">
-          <span id="progressText">0 / 500</span>
-          <span id="perTapText">+1 / tap</span>
-        </div>
-      </div>
+// Sync to Backend (Har 3 sekundda)
+setInterval(async () => {
+    if (state.pendingTaps > 0) {
+        const count = state.pendingTaps;
+        state.pendingTaps = 0;
+        try {
+            await fetch('/api/tap', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ userId: tg.initDataUnsafe.user?.id || 1, count })
+            });
+        } catch(e) { console.error("Sync error"); }
+    }
+}, 3000);
 
-      <div class="stage">
-        <div class="coin-zone" id="coinZone">
-          <div class="charge-ring" id="chargeRing"></div>
-          <div class="combo-tag" id="comboTag">x2 kombo</div>
-          <div class="coin" id="coin">
-            <div class="coin-inner-ring"></div>
-            <div class="coin-glyph">Y</div>
-          </div>
-          <div class="floaters" id="floaters"></div>
-        </div>
-      </div>
-      <div class="multi-hint">Bir nechta barmoq bilan bosish mumkin</div>
+// Energy Regen
+setInterval(() => {
+    if (state.energy < 100) {
+        state.energy++;
+        document.getElementById('energy').innerText = state.energy;
+    }
+}, 1000);
 
-      <div class="energy-row">
-        <div class="energy-icon"></div>
-        <div class="energy-track"><div class="energy-fill" id="energyFill"></div></div>
-        <div class="energy-num" id="energyNum">100/100</div>
-      </div>
+tg.ready();
+tg.expand();
+      # Yunex Telegram Mini App
 
-      <div class="stats">
-        <div class="stat-card"><div class="stat-label">Jami tap</div><div class="stat-value" id="totalTaps">0</div></div>
-        <div class="stat-card"><div class="stat-label">Eng uzun kombo</div><div class="stat-value" id="bestCombo">0</div></div>
-      </div>
-    </div>
+## Ishga tushirish:
+1. Backend papkasiga kiring: `cd backend`
+2. `npm install express cors`
+3. Serverni ishga tushiring: `node server.js`
+4. Frontend: Istalgan statik server (Nginx yoki LiveServer) orqali oching.
 
-    <div class="view" id="view-boost">
-      <div class="section-title">Kuchaytirgichlar</div>
-      <div class="section-sub">Coin sarflab, tap kuchi va energiyangni oshir</div>
-
-      <div class="card">
-        <div class="card-icon icon-tap">⚡</div>
-        <div class="card-body">
-          <div class="card-title">Multi-tap</div>
-          <div class="card-desc">Har tapdan olinadigan coin miqdorini oshiradi</div>
-          <div class="card-lvl">Daraja <span id="boostTapLvl">0</span> · +1 / tap</div>
-        </div>
-        <button class="card-btn" id="boostTapBtn">120</button>
-      </div>
-
-      <div class="card">
-        <div class="card-icon icon-energy">🔋</div>
-        <div class="card-body">
-          <div class="card-title">Energiya sig'imi</div>
-          <div class="card-desc">Maksimal energiya miqdorini oshiradi</div>
-          <div class="card-lvl">Daraja <span id="boostEnergyLvl">0</span> · +20 max</div>
-        </div>
-        <button class="card-btn" id="boostEnergyBtn">150</button>
-      </div>
-
-      <div class="card">
-        <div class="card-icon icon-regen">⏱️</div>
-        <div class="card-body">
-          <div class="card-title">Tiklanish tezligi</div>
-          <div class="card-desc">Energiya tezroq tiklanadi</div>
-          <div class="card-lvl">Daraja <span id="boostRegenLvl">0</span></div>
-        </div>
-        <button class="card-btn" id="boostRegenBtn">200</button>
-      </div>
-
-      <div class="card">
-        <div class="card-icon icon-auto">🤖</div>
-        <div class="card-body">
-          <div class="card-title">Avto-yig'uvchi</div>
-          <div class="card-desc">Ilova yopiq bo'lsa ham har soniyada coin yig'ib turadi</div>
-          <div class="card-lvl">Daraja <span id="boostAutoLvl">0</span> · +0.2/s</div>
-        </div>
-        <button class="card-btn" id="boostAutoBtn">300</button>
-      </div>
-    </div>
-
-    <div class="view" id="view-tasks">
-      <div class="section-title">Vazifalar</div>
-      <div class="section-sub">Bajarib, bonus YNX yutib ol</div>
-
-      <div class="task-card">
-        <div class="task-left">
-          <div class="task-icon">📺</div>
-          <div>
-            <div class="task-title">Reklama ko'rish</div>
-            <div class="task-reward" id="adRewardText">+50 YNX</div>
-          </div>
-        </div>
-        <button class="task-btn ready" id="adBtn">Ko'rish</button>
-      </div>
-
-      <div class="task-card">
-        <div class="task-left">
-          <div class="task-icon">🎁</div>
-          <div>
-            <div class="task-title">Kunlik bonus</div>
-            <div class="task-reward">+100 YNX</div>
-          </div>
-        </div>
-        <button class="task-btn ready" id="dailyBtn">Olish</button>
-      </div>
-
-      <div class="task-card">
-        <div class="task-left">
-          <div class="task-icon">📢</div>
-          <div>
-            <div class="task-title">Kanalga a'zo bo'lish</div>
-            <div class="task-reward">+80 YNX</div>
-          </div>
-        </div>
-        <button class="task-btn ready" id="channelBtn">Bajarish</button>
-      </div>
-
-      <div class="task-card">
-        <div class="task-left">
-          <div class="task-icon">⭐</div>
-          <div>
-            <div class="task-title">Ilovaga baho berish</div>
-            <div class="task-reward">+60 YNX</div>
-          </div>
-        </div>
-        <button class="task-btn ready" id="rateBtn">Bajarish</button>
-      </div>
-    </div>
-
-    <div class="view" id="view-ref">
-      <div class="section-title">Referal</div>
-      <div class="section-sub">Do'stlaringni taklif qil — ikkalangiz ham yutasiz</div>
-
-      <div class="ref-code-box">
-        <div style="font-size:12px; color:var(--muted);">Sening taklif kodingi</div>
-        <div class="ref-code" id="refCode">YNX-8F2K9</div>
-        <button class="copy-btn" id="copyRefBtn">Havolani nusxalash</button>
-      </div>
-      <div class="ref-reward-note">Har bir taklif qilingan do'st uchun <b style="color:var(--gold)">+250 YNX</b> bonus olasan</div>
-
-      <div id="friendsList">
-        <div class="empty-note">Hali hech kimni taklif qilmadingiz</div>
-      </div>
-    </div>
-
-    <div class="view" id="view-profile">
-      <div class="profile-header">
-        <div class="avatar"><span>Y</span></div>
-        <div class="profile-name">O'yinchi</div>
-        <div class="profile-sub" id="joinedText">Bugun qo'shildi</div>
-      </div>
-
-      <div class="profile-grid">
-        <div class="stat-card"><div class="stat-label">Daraja</div><div class="stat-value" id="profLevel">1</div></div>
-        <div class="stat-card"><div class="stat-label">Balans</div><div class="stat-value" id="profBalance">0 YNX</div></div>
-        <div class="stat-card"><div class="stat-label">Jami tap</div><div class="stat-value" id="profTaps">0</div></div>
-        <div class="stat-card"><div class="stat-label">Eng uzun kombo</div><div class="stat-value" id="profCombo">0</div></div>
-      </div>
-
-      <button class="reset-btn" id="resetBtn">Progressni tozalash</button>
-    </div>
-
-  </div>
-
-  <div class="navbar">
-    <button class="navbtn active" data-view="home"><span class="ico">🪙</span>Bosh sahifa</button>
-    <button class="navbtn" data-view="boost"><span class="ico">⚡</span>Boost</button>
-    <button class="navbtn" data-view="tasks"><span class="ico">✅</span>Vazifalar</button>
-    <button class="navbtn" data-view="ref"><span class="ico">👥</span>Referal</button>
-    <button class="navbtn" data-view="profile"><span clas
+## Telegram'ga ulash:
+1. @BotFather orqali bot yarating.
+2. /newapp buyrug'ini bering.
+3. Hostingingiz URL manzilini kiriting.
+      
