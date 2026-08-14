@@ -1,17 +1,4 @@
-<div class="energy">
-  ⚡ Energy: <span id="energy">100</span>/100
-</div>
-
-<div class="nav">
-  <button onclick="setTab('home')">🏠 Home</button>
-  <button onclick="setTab('boost')">⚡ Boost</button>
-  <button onclick="setTab('tasks')">☑️ Tasks</button>
-  <button onclick="setTab('referral')">👥 Referral</button>
-  <button onclick="setTab('profile')">👤 Profile</button>
-</div>
-
-<script>
-function setTab(tab) {
-  console.log(tab);
-}
-</script>
+import { useState, useEffect, useRef } from "react";
+import { Home, Zap, ListChecks, Users, User } from "lucide-react";
+{navItems.map(({ key, label, icon: Icon }) => (
+{energy}/{maxEnergy}
