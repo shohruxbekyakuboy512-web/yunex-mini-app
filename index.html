@@ -1,277 +1,60 @@
-import { useState, useEffect, useRef } from "react";
-import { Home, Zap, ListChecks, Users, User } from "lucide-react";
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Yunex</title>
+  <style>
+    body{
+      margin:0;background:#03100a;color:white;
+      font-family:Arial;text-align:center;
+    }
+    h1{margin-top:40px;color:#2bff6b}
+    #coin{
+      width:180px;height:180px;border-radius:50%;
+      margin:70px auto 30px;
+      background:#092719;
+      border:5px solid #f5b942;
+      display:flex;align-items:center;justify-content:center;
+      font-size:70px;font-weight:bold;
+      box-shadow:0 0 35px #2bff6b;
+      cursor:pointer;
+    }
+    #coin:active{transform:scale(.93)}
+    .energy{color:#f5b942}
+  </style>
+</head>
+<body>
 
-export default function YunexHome() {
-  const [balance, setBalance] = useState(128450);
-  const [energy, setEnergy] = useState(842);
-  const [maxEnergy] = useState(1000);
-  const [pressed, setPressed] = useState(false);
-  const [burst, setBurst] = useState(false);
-  const [particles, setParticles] = useState([]);
-  const [activeTab, setActiveTab] = useState("home");
-  const burstTimeout = useRef(null);
+<h1>YUNEX</h1>
 
-  useEffect(() => {
-    const regen = setInterval(() => {
-      setEnergy((e) => Math.min(maxEnergy, e + 3));
-    }, 2000);
-    return () => clearInterval(regen);
-  }, [maxEnergy]);
+<div>Balance: <b id="balance">0</b> YNX</div>
 
-  const tap = (e) => {
-    if (energy <= 0) return;
-    setBalance((b) => b + 1);
-    setEnergy((e) => Math.max(0, e - 1));
-    setPressed(true);
-    setTimeout(() => setPressed(false), 120);
+<div id="coin">Y</div>
 
-    setBurst(true);
-    clearTimeout(burstTimeout.current);
-    burstTimeout.current = setTimeout(() => setBurst(false), 400);
+<div class="energy">
+  ⚡ Energy: <span id="energy">100</span>/100
+</div>
 
-    const id = Date.now() + Math.random();
-    const offsetX = Math.random() * 60 - 30;
-    setParticles((p) => [...p, { id, offsetX }]);
-    setTimeout(() => {
-      setParticles((p) => p.filter((pt) => pt.id !== id));
-    }, 900);
-  };
+<script>
+let balance=0;
+let energy=100;
 
-  const level = 7;
-  const levelProgress = 62;
-  const energyPct = Math.round((energy / maxEnergy) * 100);
+document.getElementById("coin").onclick=()=>{
+  if(energy<=0)return;
+  balance++;
+  energy--;
+  document.getElementById("balance").textContent=balance;
+  document.getElementById("energy").textContent=energy;
+};
 
-  const navItems = [
-    { key: "home", label: "Home", icon: Home },
-    { key: "boost", label: "Boost", icon: Zap },
-    { key: "tasks", label: "Tasks", icon: ListChecks },
-    { key: "referral", label: "Referral", icon: Users },
-    { key: "profile", label: "Profile", icon: User },
-  ];
+setInterval(()=>{
+  if(energy<100){
+    energy++;
+    document.getElementById("energy").textContent=energy;
+  }
+},1000);
+</script>
 
-  return (
-    <div
-      style={{
-        fontFamily: "'Sora', sans-serif",
-        background:
-          "radial-gradient(120% 80% at 50% -10%, #0E2A1C 0%, #05130D 55%, #030A07 100%)",
-        minHeight: "100vh",
-        color: "#EAFBF1",
-      }}
-      className="w-full flex justify-center"
-    >
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
-
-        .yx-frame { max-width: 420px; width: 100%; position: relative; min-height: 100vh; overflow: hidden; }
-        .yx-blob-purple {
-          position: absolute; top: -60px; left: -80px; width: 260px; height: 260px;
-          background: radial-gradient(circle, rgba(168,85,247,0.35) 0%, rgba(168,85,247,0) 70%);
-          filter: blur(10px); pointer-events: none;
-        }
-        .yx-blob-gold {
-          position: absolute; top: 120px; right: -100px; width: 280px; height: 280px;
-          background: radial-gradient(circle, rgba(245,185,66,0.18) 0%, rgba(245,185,66,0) 70%);
-          filter: blur(10px); pointer-events: none;
-        }
-        .yx-mono { font-family: 'JetBrains Mono', monospace; }
-
-        .yx-coin-wrap { position: relative; width: 236px; height: 236px; margin: 0 auto; }
-        .yx-coin-glow {
-          position: absolute; inset: -30px; border-radius: 50%;
-          background: radial-gradient(circle, rgba(43,255,107,0.35) 0%, rgba(43,255,107,0) 70%);
-          animation: yx-pulse 2.6s ease-in-out infinite;
-        }
-        .yx-coin-burst {
-          position: absolute; inset: -10px; border-radius: 50%;
-          background: radial-gradient(circle, rgba(245,185,66,0.55) 0%, rgba(43,255,107,0) 70%);
-          opacity: 0; transform: scale(0.7);
-        }
-        .yx-coin-burst.active {
-          animation: yx-burst 0.4s ease-out;
-        }
-        .yx-coin {
-          position: relative; width: 100%; height: 100%; border-radius: 50%;
-          background: radial-gradient(circle at 35% 28%, #123B27 0%, #081F14 60%, #051309 100%);
-          border: 3px solid transparent;
-          background-clip: padding-box;
-          box-shadow:
-            0 0 0 3px rgba(245,185,66,0.85),
-            0 0 0 6px rgba(43,255,107,0.25),
-            0 18px 40px rgba(0,0,0,0.55),
-            inset 0 2px 18px rgba(43,255,107,0.15);
-          display: flex; align-items: center; justify-content: center;
-          cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;
-          transition: transform 0.12s ease;
-          overflow: hidden;
-        }
-        .yx-coin.pressed { transform: scale(0.93); }
-        .yx-coin::before {
-          content: ""; position: absolute; top: -50%; left: -60%; width: 40%; height: 220%;
-          background: linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.14) 50%, rgba(255,255,255,0) 100%);
-          transform: rotate(20deg); animation: yx-sweep 3.4s linear infinite;
-        }
-        .yx-coin-mark {
-          font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 64px;
-          background: linear-gradient(180deg, #6BFFA0 0%, #2BFF6B 55%, #14C74D 100%);
-          -webkit-background-clip: text; background-clip: text; color: transparent;
-          text-shadow: 0 0 22px rgba(43,255,107,0.45);
-        }
-
-        @keyframes yx-pulse {
-          0%, 100% { opacity: 0.55; transform: scale(1); }
-          50% { opacity: 0.95; transform: scale(1.06); }
-        }
-        @keyframes yx-burst {
-          0% { opacity: 0.9; transform: scale(0.7); }
-          100% { opacity: 0; transform: scale(1.35); }
-        }
-        @keyframes yx-sweep {
-          0% { transform: translateX(-60%) rotate(20deg); }
-          100% { transform: translateX(220%) rotate(20deg); }
-        }
-        @keyframes yx-float-up {
-          0% { opacity: 0; transform: translate(-50%, 0) scale(0.8); }
-          15% { opacity: 1; transform: translate(-50%, -10px) scale(1); }
-          100% { opacity: 0; transform: translate(-50%, -90px) scale(1.05); }
-        }
-        .yx-particle {
-          position: absolute; top: 10px; left: 50%; font-family: 'JetBrains Mono', monospace;
-          font-weight: 700; font-size: 18px; color: #F5B942;
-          text-shadow: 0 0 10px rgba(245,185,66,0.6);
-          animation: yx-float-up 0.9s ease-out forwards; pointer-events: none;
-        }
-
-        .yx-navbtn { transition: color 0.2s ease, transform 0.15s ease; }
-        .yx-navbtn.active { color: #2BFF6B; transform: translateY(-2px); }
-        .yx-navbtn.active .yx-navdot { opacity: 1; }
-        .yx-navdot { opacity: 0; transition: opacity 0.2s ease; }
-      `}</style>
-
-      <div className="yx-frame">
-        <div className="yx-blob-purple" />
-        <div className="yx-blob-gold" />
-
-        <div className="relative z-10 px-5 pt-6 pb-2">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <div
-                className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold"
-                style={{
-                  background: "linear-gradient(135deg, #A855F7, #7C3AED)",
-                  boxShadow: "0 0 14px rgba(168,85,247,0.5)",
-                }}
-              >
-                {level}
-              </div>
-              <div>
-                <div className="text-xs opacity-60 leading-none">Level</div>
-                <div className="text-sm font-semibold leading-tight">Miner</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5 yx-mono text-base font-bold">
-              <span style={{ color: "#F5B942" }}>◆</span>
-              <span>{balance.toLocaleString()}</span>
-              <span className="text-xs opacity-60 font-normal">YNX</span>
-            </div>
-          </div>
-          <div
-            className="w-full h-2 rounded-full overflow-hidden"
-            style={{ background: "rgba(255,255,255,0.08)" }}
-          >
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: `${levelProgress}%`,
-                background: "linear-gradient(90deg, #A855F7, #F5B942)",
-                boxShadow: "0 0 8px rgba(168,85,247,0.6)",
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="relative z-10 flex flex-col items-center justify-center pt-10 pb-8">
-          <div className="yx-coin-wrap">
-            <div className="yx-coin-glow" />
-            <div className={`yx-coin-burst ${burst ? "active" : ""}`} />
-            <div
-              className={`yx-coin ${pressed ? "pressed" : ""}`}
-              onMouseDown={tap}
-              onTouchStart={tap}
-            >
-              <span className="yx-coin-mark">Y</span>
-              {particles.map((p) => (
-                <span
-                  key={p.id}
-                  className="yx-particle"
-                  style={{ marginLeft: p.offsetX }}
-                >
-                  +1
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="w-full max-w-[260px] mt-8 px-2">
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="flex items-center gap-1 text-xs font-semibold opacity-80">
-                <Zap size={13} style={{ color: "#F5B942" }} fill="#F5B942" />
-                Energy
-              </div>
-              <div className="text-xs yx-mono opacity-70">
-                {energy}/{maxEnergy}
-              </div>
-            </div>
-            <div
-              className="w-full h-2.5 rounded-full overflow-hidden"
-              style={{ background: "rgba(255,255,255,0.08)" }}
-            >
-              <div
-                className="h-full rounded-full transition-all duration-300"
-                style={{
-                  width: `${energyPct}%`,
-                  background: "linear-gradient(90deg, #F5B942, #2BFF6B)",
-                  boxShadow: "0 0 8px rgba(43,255,107,0.5)",
-                }}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="h-24" />
-
-        <div
-          className="fixed bottom-0 left-0 right-0 z-20 mx-auto"
-          style={{ maxWidth: 420 }}
-        >
-          <div
-            className="flex items-center justify-around py-3 px-2"
-            style={{
-              background: "rgba(5,19,13,0.92)",
-              backdropFilter: "blur(10px)",
-              borderTop: "1px solid rgba(43,255,107,0.15)",
-            }}
-          >
-            {navItems.map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => setActiveTab(key)}
-                className={`yx-navbtn flex flex-col items-center gap-1 px-2 ${
-                  activeTab === key ? "active" : ""
-                }`}
-                style={{ color: activeTab === key ? "#2BFF6B" : "#8FA69B", background: "none", border: "none" }}
-              >
-                <Icon size={20} strokeWidth={activeTab === key ? 2.4 : 2} />
-                <span className="text-[10px] font-medium">{label}</span>
-                <span
-                  className="yx-navdot w-1 h-1 rounded-full"
-                  style={{ background: "#2BFF6B" }}
-                />
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+</body>
+</html>
