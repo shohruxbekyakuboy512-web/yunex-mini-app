@@ -1,6 +1,5 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="uz">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -69,10 +68,16 @@ h1{
 
   cursor:pointer;
   user-select:none;
+  -webkit-tap-highlight-color:transparent;
   transition:.12s;
 }
 
 .coin:active{
+  transform:scale(.91);
+}
+
+/* iOS/Telegram WebView'da :active ishlamay qolganda fallback */
+.coin.pressed{
   transform:scale(.91);
 }
 
@@ -119,6 +124,7 @@ h1{
   width:84.2%;
   background:linear-gradient(90deg,#f5b942,#2bff6b);
   box-shadow:0 0 12px #2bff6b;
+  transition:width .2s ease;
 }
 
 .nav{
@@ -153,7 +159,7 @@ h1{
 </style>
 </head>
 
-<body>
+<body ontouchstart="">
 
 <h1>YUNEX</h1>
 
@@ -164,7 +170,7 @@ h1{
 <div class="coin-box" id="coinBox">
   <div class="coin-glow"></div>
 
-  <div class="coin" onclick="tapCoin()">
+  <div class="coin" id="coin">
     <span>Y</span>
   </div>
 </div>
@@ -196,6 +202,12 @@ let balance=128450;
 let energy=842;
 const maxEnergy=1000;
 
+const coin=document.getElementById("coin");
+const coinBox=document.getElementById("coinBox");
+const balanceEl=document.getElementById("balance");
+const energyEl=document.getElementById("energy");
+const energyBar=document.getElementById("energyBar");
+
 function tapCoin(){
 
   if(energy<=0)return;
@@ -203,25 +215,36 @@ function tapCoin(){
   balance++;
   energy--;
 
-  document.getElementById("balance").textContent=
-    balance.toLocaleString();
+  balanceEl.textContent=balance.toLocaleString();
+  energyEl.textContent=energy;
+  energyBar.style.width=(energy/maxEnergy*100)+"%";
 
-  document.getElementById("energy").textContent=energy;
-
-  document.getElementById("energyBar").style.width=
-    (energy/maxEnergy*100)+"%";
+  // bosilish animatsiyasi (iOS fallback bilan)
+  coin.classList.add("pressed");
+  setTimeout(()=>{
+    coin.classList.remove("pressed");
+  },120);
 
   // +1 animatsiyasi
   const plus=document.createElement("div");
   plus.className="plus";
   plus.textContent="+1 YNX";
 
-  document.getElementById("coinBox").appendChild(plus);
+  coinBox.appendChild(plus);
 
   setTimeout(()=>{
     plus.remove();
   },800);
 }
+
+// Ham click, ham touchstart tinglaymiz — ikkalasi birdan
+// ishga tushib qolmasligi uchun touchstart preventDefault qiladi
+coin.addEventListener("touchstart",function(e){
+  e.preventDefault();
+  tapCoin();
+},{passive:false});
+
+coin.addEventListener("click",tapCoin);
 
 // Energy tiklanishi
 setInterval(()=>{
@@ -233,10 +256,8 @@ setInterval(()=>{
     if(energy>maxEnergy)
       energy=maxEnergy;
 
-    document.getElementById("energy").textContent=energy;
-
-    document.getElementById("energyBar").style.width=
-      (energy/maxEnergy*100)+"%";
+    energyEl.textContent=energy;
+    energyBar.style.width=(energy/maxEnergy*100)+"%";
   }
 
 },2000);
