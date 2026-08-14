@@ -2,3 +2,251 @@ import { useState, useEffect, useRef } from "react";
 import { Home, Zap, ListChecks, Users, User } from "lucide-react";
 {navItems.map(({ key, label, icon: Icon }) => (
 {energy}/{maxEnergy}
+
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Yunex</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:
+    radial-gradient(circle at 50% 30%,#123d25,#06170e 55%,#020805);
+  color:white;
+  font-family:Arial,sans-serif;
+  text-align:center;
+  min-height:100vh;
+  overflow:hidden;
+}
+
+h1{
+  color:#2bff6b;
+  margin:25px 0 8px;
+  letter-spacing:3px;
+}
+
+.balance{
+  font-size:24px;
+  font-weight:bold;
+}
+
+.coin-box{
+  position:relative;
+  width:250px;
+  height:250px;
+  margin:70px auto 35px;
+}
+
+.coin-glow{
+  position:absolute;
+  inset:-35px;
+  border-radius:50%;
+  background:radial-gradient(circle,
+    rgba(43,255,107,.45),
+    transparent 65%);
+  animation:glow 2s infinite;
+}
+
+.coin{
+  position:absolute;
+  inset:10px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  background:
+    radial-gradient(circle at 35% 25%,
+    #65ff9b,#0c8f43 45%,#064523 75%);
+
+  border:7px solid #f5b942;
+
+  box-shadow:
+    0 0 15px #f5b942,
+    0 0 45px rgba(43,255,107,.8),
+    inset 0 0 25px rgba(255,255,255,.25);
+
+  cursor:pointer;
+  user-select:none;
+  transition:.12s;
+}
+
+.coin:active{
+  transform:scale(.91);
+}
+
+.coin span{
+  font-size:95px;
+  font-weight:bold;
+  color:#d8ffe5;
+  text-shadow:
+    0 0 10px #fff,
+    0 0 25px #2bff6b;
+}
+
+.plus{
+  position:absolute;
+  left:50%;
+  top:25px;
+  color:#f5b942;
+  font-size:22px;
+  font-weight:bold;
+  pointer-events:none;
+  animation:float .8s forwards;
+}
+
+.energy{
+  width:280px;
+  margin:auto;
+}
+
+.energy-text{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:7px;
+}
+
+.bar{
+  height:12px;
+  background:#183023;
+  border-radius:20px;
+  overflow:hidden;
+}
+
+.fill{
+  height:100%;
+  width:84.2%;
+  background:linear-gradient(90deg,#f5b942,#2bff6b);
+  box-shadow:0 0 12px #2bff6b;
+}
+
+.nav{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  padding:15px 5px;
+  display:flex;
+  justify-content:space-around;
+  background:rgba(3,15,9,.94);
+  border-top:1px solid rgba(43,255,107,.2);
+}
+
+.nav div{
+  color:#8fa69b;
+  font-size:12px;
+}
+
+.nav .active{
+  color:#2bff6b;
+}
+
+@keyframes glow{
+  50%{transform:scale(1.08);opacity:.7}
+}
+
+@keyframes float{
+  0%{opacity:1;transform:translate(-50%,0)}
+  100%{opacity:0;transform:translate(-50%,-80px)}
+}
+</style>
+</head>
+
+<body>
+
+<h1>YUNEX</h1>
+
+<div class="balance">
+  🟡 <span id="balance">128450</span> YNX
+</div>
+
+<div class="coin-box" id="coinBox">
+  <div class="coin-glow"></div>
+
+  <div class="coin" onclick="tapCoin()">
+    <span>Y</span>
+  </div>
+</div>
+
+<div class="energy">
+
+  <div class="energy-text">
+    <b>⚡ Energy</b>
+    <span><span id="energy">842</span>/1000</span>
+  </div>
+
+  <div class="bar">
+    <div class="fill" id="energyBar"></div>
+  </div>
+
+</div>
+
+<div class="nav">
+  <div class="active">🏠<br>Home</div>
+  <div>⚡<br>Boost</div>
+  <div>☑️<br>Tasks</div>
+  <div>👥<br>Referral</div>
+  <div>👤<br>Profile</div>
+</div>
+
+<script>
+
+let balance=128450;
+let energy=842;
+const maxEnergy=1000;
+
+function tapCoin(){
+
+  if(energy<=0)return;
+
+  balance++;
+  energy--;
+
+  document.getElementById("balance").textContent=
+    balance.toLocaleString();
+
+  document.getElementById("energy").textContent=energy;
+
+  document.getElementById("energyBar").style.width=
+    (energy/maxEnergy*100)+"%";
+
+  // +1 animatsiyasi
+  const plus=document.createElement("div");
+  plus.className="plus";
+  plus.textContent="+1 YNX";
+
+  document.getElementById("coinBox").appendChild(plus);
+
+  setTimeout(()=>{
+    plus.remove();
+  },800);
+}
+
+// Energy tiklanishi
+setInterval(()=>{
+
+  if(energy<maxEnergy){
+
+    energy+=3;
+
+    if(energy>maxEnergy)
+      energy=maxEnergy;
+
+    document.getElementById("energy").textContent=energy;
+
+    document.getElementById("energyBar").style.width=
+      (energy/maxEnergy*100)+"%";
+  }
+
+},2000);
+
+</script>
+
+</body>
+</html>
