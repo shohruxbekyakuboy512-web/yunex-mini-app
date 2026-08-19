@@ -622,3 +622,109 @@ renderReferral();
 
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>YUNEX Admin</title>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">YUNEX <span>ADMIN</span></div>
+    <input type="text" id="loginUsername" placeholder="Username" autocomplete="username">
+    <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
+    <button id="loginBtn">Sign in</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<div class="admin-app" id="adminApp" style="display:none">
+  <aside class="sidebar">
+    <div class="sidebar-logo">YUNEX <span>ADMIN</span></div>
+    <button class="side-item active" data-view="dashboard">📊 Dashboard</button>
+    <button class="side-item" data-view="users">👥 Users</button>
+    <button class="side-item" data-view="tasks">☑️ Tasks</button>
+    <button class="side-item" data-view="boosts">⚡ Boosts</button>
+    <button class="side-item" data-view="transactions">💳 Transactions</button>
+    <button class="side-item" data-view="settings">⚙️ Settings</button>
+    <button class="side-item" data-view="logs">🧾 Admin logs</button>
+    <button class="side-item logout" id="logoutBtn">🚪 Sign out</button>
+  </aside>
+
+  <main class="content">
+    <section class="view active" id="view-dashboard">
+      <h1>Dashboard</h1>
+      <div class="stat-grid" id="dashboardStats"></div>
+      <div class="chart-box">
+        <h2>New users — last 7 days</h2>
+        <svg id="chartSvg" viewBox="0 0 320 120" preserveAspectRatio="none"></svg>
+      </div>
+    </section>
+
+    <section class="view" id="view-users">
+      <h1>Users</h1>
+      <div class="toolbar">
+        <input type="text" id="userSearch" placeholder="Search by Telegram ID, username or name...">
+        <button id="searchBtn">Search</button>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>ID</th><th>Telegram ID</th><th>Name</th><th>COIN</th><th>YUNEX</th><th>Energy</th><th>Level</th><th></th></tr></thead>
+        <tbody id="usersTableBody"></tbody>
+      </table>
+      <div class="pagination" id="usersPagination"></div>
+    </section>
+
+    <section class="view" id="view-tasks">
+      <h1>Tasks</h1>
+      <button class="primary-btn" id="newTaskBtn">+ New task</button>
+      <table class="data-table">
+        <thead><tr><th>Title</th><th>Type</th><th>Reward</th><th>Completions</th><th>Active</th><th></th></tr></thead>
+        <tbody id="tasksTableBody"></tbody>
+      </table>
+    </section>
+
+    <section class="view" id="view-boosts">
+      <h1>Boosts</h1>
+      <button class="primary-btn" id="newBoostBtn">+ New boost</button>
+      <table class="data-table">
+        <thead><tr><th>Name</th><th>Effect</th><th>Price</th><th>Currency</th><th>Lvl req.</th><th>Active</th><th></th></tr></thead>
+        <tbody id="boostsTableBody"></tbody>
+      </table>
+    </section>
+
+    <section class="view" id="view-transactions">
+      <h1>Transactions</h1>
+      <table class="data-table">
+        <thead><tr><th>Time</th><th>User</th><th>Type</th><th>Currency</th><th>Amount</th><th>Balance after</th></tr></thead>
+        <tbody id="txTableBody"></tbody>
+      </table>
+    </section>
+
+    <section class="view" id="view-settings">
+      <h1>Settings</h1>
+      <div class="settings-form" id="settingsForm"></div>
+      <button class="primary-btn" id="saveSettingsBtn">Save settings</button>
+      <div class="modal-msg" id="settingsMsg"></div>
+    </section>
+
+    <section class="view" id="view-logs">
+      <h1>Admin actions</h1>
+      <table class="data-table">
+        <thead><tr><th>Time</th><th>Admin</th><th>Action</th><th>User</th><th>Amount</th><th>Reason</th><th>IP</th></tr></thead>
+        <tbody id="logsTableBody"></tbody>
+      </table>
+    </section>
+  </main>
+</div>
+
+<div class="modal-overlay" id="userModal"><div class="modal"><button class="modal-close" data-close>&times;</button><div id="userModalContent"></div></div></div>
+<div class="modal-overlay" id="taskModal"><div class="modal"><button class="modal-close" data-close>&times;</button><div id="taskModalContent"></div></div></div>
+<div class="modal-overlay" id="boostModal"><div class="modal"><button class="modal-close" data-close>&times;</button><div id="boostModalContent"></div></div></div>
+
+<script src="admin.js"></script>
+</body>
+</html>
